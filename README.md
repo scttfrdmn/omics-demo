@@ -12,37 +12,34 @@ This repository contains all necessary files to run a 15-minute demo showcasing 
 ## Quick Start
 
 1. Clone this repository:
-git clone https://github.com/your-username/omics-demo.git
-cd omics-demo
+`git clone https://github.com/your-username/omics-demo.git`
+`cd omics-demo`
 
 2. Run the initial setup script:
-./setup.sh your-unique-bucket-name your-aws-region
+`./setup.sh your-unique-bucket-name your-aws-region`
 
 3. Prepare the demo data:
 ./prepare_demo_data.sh
 
 4. Deploy the AWS infrastructure:
-aws cloudformation create-stack 
---stack-name omics-demo 
---template-body file://cloudformation.yaml 
---capabilities CAPABILITY_IAM 
---parameters ParameterKey=DataBucketName,ParameterValue=your-unique-bucket-name
+`aws cloudformation create-stack` 
+`--stack-name omics-demo` 
+`--template-body file://cloudformation.yaml` 
+`--capabilities CAPABILITY_IAM` 
+`--parameters ParameterKey=DataBucketName,ParameterValue=your-unique-bucket-name`
 
 5. Wait for stack creation to complete (10-15 minutes):
-aws cloudformation wait stack-create-complete --stack-name omics-demo
+`aws cloudformation wait stack-create-complete --stack-name omics-demo`
 
 6. Run a test job:
-./test_demo.sh
+`./test_demo.sh`
 
 7. When ready for your presentation, start the demo:
-./start_demo.sh
+`./start_demo.sh`
 
 8. Open the dashboard URL printed by the script to monitor progress.
 
 ## Cleanup
 
 To delete all AWS resources and avoid ongoing charges:
-aws cloudformation delete-stack --stack-name omics-demo
-Copy
-For more detailed information, see the complete documentation in `docs/`.
-
+`aws cloudformation delete-stack --stack-name omics-demo`
