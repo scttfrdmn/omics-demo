@@ -22,88 +22,148 @@ All this is accomplished in 15 minutes for ~$38, compared to 2 weeks and $1,800 
   - 4+ GPU instances (g5g.2xlarge) in your region
 - Git
 - Bash shell environment
+- Python 3.6+ with pip
+- Node.js 14+ and npm (for the dashboard)
 
-## Quick Start
+## Detailed Setup Instructions
 
-1. Clone this repository:
-   ```
-   git clone https://github.com/your-username/omics-demo.git
-   cd omics-demo
-   ```
+### 1. Clone the Repository
 
-2. Run the initial setup script:
-   ```
-   ./setup.sh your-unique-bucket-name your-aws-region
-   ```
+```bash
+git clone https://github.com/your-username/omics-demo.git
+cd omics-demo
+```
 
-3. Prepare the genomic data:
-   ```
-   ./prepare_demo_data.sh
-   ```
+### 2. Environment Setup
 
-4. Deploy the AWS infrastructure:
-   ```
-   aws cloudformation create-stack \
-     --stack-name omics-demo \
-     --template-body file://cloudformation.yaml \
-     --capabilities CAPABILITY_IAM \
-     --parameters ParameterKey=DataBucketName,ParameterValue=your-unique-bucket-name
-   ```
+The demo consists of three main components:
+- **Nextflow Workflow**: Handles genomic processing
+- **Backend API**: Provides secure access to AWS resources
+- **Dashboard**: Visualizes progress and results
 
-5. Wait for stack creation to complete (10-15 minutes):
-   ```
-   aws cloudformation wait stack-create-complete --stack-name omics-demo
-   ```
+Set up the environment with:
 
-6. Verify resources are properly configured:
-   ```
-   ./check_resources.sh
-   ```
+```bash
+./setup.sh your-unique-bucket-name your-aws-region
+```
 
-7. Run a test job to ensure everything works:
-   ```
-   ./test_demo.sh
-   ```
+This script:
+- Creates a dedicated S3 bucket for the demo
+- Generates a configuration file
+- Sets up the directory structure
+- Installs Python dependencies
+- Validates AWS permissions
 
-8. When ready for your presentation, start the demo:
-   ```
-   ./start_demo.sh
-   ```
+### 3. Install Dependencies
 
-9. If you encounter issues during the demo, reset it:
-   ```
-   ./reset_demo.sh
-   ```
+#### Python Dependencies
 
-10. Open the dashboard URL printed by the start_demo.sh script to monitor progress.
+The setup script will try to install Python dependencies, but you can also do this manually:
 
-## Demo "Wow" Factors
+```bash
+pip3 install -r requirements.txt
+```
 
-- **Speed**: Processes 100 genomic samples and calls variants in just 15 minutes
-- **Scale**: Analyzes thousands of genetic variants across multiple samples simultaneously
-- **Visual Insights**: Interactive visualizations of variant distributions and population structure
-- **Cost Efficiency**: 98% cost reduction compared to traditional on-premises approach
-- **Scalability**: Automatically scales from 0 to 256 vCPUs based on workload
+#### Node.js Dependencies
 
-## Genomic Analysis Components
+For the dashboard:
 
-1. **Pre-processing**:
-   - Reference genome preparation
-   - BAM file processing
+```bash
+cd dashboard
+npm install
+```
 
-2. **Variant Calling**:
-   - bcftools for genomic variant identification
-   - Merge sample variants into cohort VCF
+### 4. Prepare Demo Data
 
-3. **Statistical Analysis**:
-   - Transition/transversion ratio calculation
-   - Variant annotation and effect prediction
+```bash
+./prepare_demo_data.sh
+```
 
-4. **Population Analysis**:
-   - Population structure visualization
-   - Relatedness calculation
+This script will:
+- Download sample data from the 1000 Genomes Project
+- Process and upload it to your S3 bucket
+- Prepare the necessary reference files
 
-## AWS Components Used
+### 5. Deploy AWS Infrastructure
+
+```bash
+aws cloudformation create-stack \
+  --stack-name omics-demo \
+  --template-body file://cloudformation.yaml \
+  --capabilities CAPABILITY_IAM \
+  --parameters ParameterKey=DataBucketName,ParameterValue=your-unique-bucket-name
+```
+
+Wait for stack creation to complete (10-15 minutes):
+
+```bash
+aws cloudformation wait stack-create-complete --stack-name omics-demo
+```
+
+### 6. Start the Backend API
+
+The backend API provides a secure interface to AWS resources for the dashboard:
+
+```bash
+./start_api.sh
+```
+
+The API will be available at http://localhost:5000.
+
+### 7. Start the Dashboard
+
+```bash
+cd dashboard
+npm start
+```
+
+The dashboard will be available at http://localhost:3000.
+
+### 8. Run a Test Job
+
+Verify that everything works:
+
+```bash
+./test_demo.sh
+```
+
+This runs a small subset of samples to ensure the pipeline and infrastructure are functioning correctly.
+
+### 9. Run the Full Demo
+
+When ready for your presentation:
+
+```bash
+./start_demo.sh
+```
+
+Open the dashboard in your browser to monitor progress.
+
+### 10. Reset the Demo (if needed)
+
+If you encounter issues during the demo:
+
+```bash
+./reset_demo.sh
+```
+
+## Architecture Details
+
+### Workflow Engine
+
+The genomic analysis pipeline is implemented using Nextflow, which:
+- Manages workflow dependencies
+- Handles error recovery
+- Provides detailed execution reports
+- Integrates with AWS Batch for scaled computing
+
+Key processes in the workflow:
+1. Reference genome preparation
+2. Parallel variant calling on 100 samples
+3. Variant merging and statistical analysis
+4. Report generation
+
+### AWS Components
 
 - **AWS Batch**: Job scheduling and execution
 - **AWS Graviton3**: ARM-based instances (40% cost reduction)
@@ -112,12 +172,73 @@ All this is accomplished in 15 minutes for ~$38, compared to 2 weeks and $1,800 
 - **CloudWatch**: Monitoring and logging
 - **Lambda**: Serverless job orchestration
 
+### Dashboard
+
+The React-based dashboard provides:
+- Real-time progress tracking
+- Resource utilization graphs
+- Cost analysis with comparison to traditional approaches
+- Interactive visualizations of genomic data
+- Error notifications
+
+### Backend API
+
+The Flask-based API secures AWS interactions by:
+- Handling authentication and authorization
+- Preventing exposure of credentials
+- Providing standardized endpoints for status and results
+- Implementing retry logic and error handling
+
+## Cost Optimization Details
+
+This demo showcases several AWS cost optimization techniques:
+- Using Graviton3 ARM processors (30-40% cheaper than x86)
+- Leveraging Spot instances (up to 70% discount from On-Demand)
+- Optimizing storage costs with lifecycle policies
+- Using containerized workloads for maximum efficiency
+- Scaling to zero when not in use
+
+## Troubleshooting
+
+### Common Issues
+
+1. **AWS Permissions**: Ensure your AWS user has appropriate permissions for CloudFormation, IAM, S3, Batch, and EC2.
+
+2. **S3 Bucket Naming**: If bucket creation fails, try a different bucket name (they must be globally unique).
+
+3. **Quota Limits**: You may need to request quota increases for AWS Batch compute and GPU instances.
+
+4. **Dashboard Connection Issues**: If the dashboard can't connect to the API, check that the API server is running and accessible.
+
+5. **AWS Batch Failures**: Use the CloudWatch Logs (accessible from the AWS Management Console) to diagnose Batch job issues.
+
+### Logs
+
+- **API Logs**: Check `setup.log` in the project root directory
+- **Dashboard Logs**: Available in the browser developer console
+- **AWS Batch Job Logs**: Available in CloudWatch Logs
+- **Pipeline Logs**: Available in S3 at `s3://your-bucket-name/results/logs`
+
 ## Cleanup
 
 To delete all AWS resources and avoid ongoing charges:
-```
+```bash
 aws cloudformation delete-stack --stack-name omics-demo
 ```
+
+Additionally, empty and delete the S3 bucket:
+```bash
+aws s3 rm s3://your-bucket-name --recursive
+aws s3 rb s3://your-bucket-name
+```
+
+## Customization
+
+You can customize various aspects of the demo:
+- Change the number of samples in `config.sh`
+- Modify genomic regions in `workflow/nextflow.config`
+- Adjust compute resources in `cloudformation.yaml`
+- Change visualization options in the dashboard
 
 ## Citation
 
