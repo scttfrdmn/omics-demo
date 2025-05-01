@@ -1,0 +1,17 @@
+# Shell check configuration
+# See https://github.com/koalaman/shellcheck/wiki/Checks for details on warnings
+
+# Suggest quoting variables
+disable=SC2086
+
+# Allow for using `source` instead of `.`
+disable=SC1091
+
+# Don't warn about indenting with spaces
+disable=SC2046
+
+# Allow for adding commands if conditionals
+enable=require-variable-braces
+
+# Set shell dialect
+shell=bash

@@ -73,6 +73,20 @@ cd dashboard
 npm install
 ```
 
+#### Development Environment Setup
+
+For contributors, we provide a development environment setup script:
+
+```bash
+./setup_dev.sh
+```
+
+This script:
+- Checks Python and Node.js versions
+- Installs all dependencies
+- Sets up pre-commit hooks for code quality
+- Configures linting tools
+
 ### 4. Prepare Demo Data
 
 ```bash
@@ -147,6 +161,39 @@ If you encounter issues during the demo:
 ./reset_demo.sh
 ```
 
+## Development Guidelines
+
+### Code Quality Tools
+
+We use several tools to maintain code quality:
+
+#### JavaScript/React
+- **ESLint**: Enforces coding standards for JavaScript
+- Run with: `cd dashboard && npm run lint`
+
+#### Python
+- **Flake8**: Checks for PEP8 compliance and coding errors
+- **Black**: Formats Python code consistently
+- **isort**: Sorts imports alphabetically and by type
+- Run with: `flake8 api tests` or `black api tests`
+
+#### Shell Scripts
+- **ShellCheck**: Validates shell scripts for common errors
+- Run with: `./validate_scripts.sh`
+
+#### Pre-commit Hooks
+- Automatically runs linting before commits
+- Install with: `pre-commit install`
+- Run manually with: `pre-commit run --all-files`
+
+### All-in-one Linting
+
+Run all code quality checks at once:
+
+```bash
+./lint.sh
+```
+
 ## Architecture Details
 
 ### Workflow Engine
@@ -188,6 +235,7 @@ The Flask-based API secures AWS interactions by:
 - Preventing exposure of credentials
 - Providing standardized endpoints for status and results
 - Implementing retry logic and error handling
+- Input validation for all endpoints
 
 ## Cost Optimization Details
 
@@ -211,6 +259,8 @@ This demo showcases several AWS cost optimization techniques:
 4. **Dashboard Connection Issues**: If the dashboard can't connect to the API, check that the API server is running and accessible.
 
 5. **AWS Batch Failures**: Use the CloudWatch Logs (accessible from the AWS Management Console) to diagnose Batch job issues.
+
+6. **Linting Errors**: If pre-commit hooks fail, run `./lint.sh` to see detailed error messages.
 
 ### Logs
 

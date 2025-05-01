@@ -12,8 +12,11 @@ import traceback
 from datetime import datetime
 import boto3
 import yaml
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, abort
 from flask_cors import CORS
+
+# Import validators
+from api.validators import validate_json, START_DEMO_SCHEMA
 
 # Configure logging
 logging.basicConfig(
@@ -34,6 +37,7 @@ STACK_NAME = 'omics-demo'
 
 # Parse config.sh to get AWS settings
 def load_config():
+    """Load configuration from config.sh file."""
     config = {
         'region': DEFAULT_REGION,
         'bucket': DEFAULT_BUCKET,
@@ -61,16 +65,31 @@ config = load_config()
 
 # Initialize AWS clients
 def get_aws_client(service_name):
+    """Create an AWS client for the specified service."""
     try:
         return boto3.client(service_name, region_name=config['region'])
     except Exception as e:
         logger.error(f"Error creating AWS client for {service_name}: {str(e)}")
         return None
 
+# Error handler for API exceptions
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Handle exceptions and return appropriate error responses."""
+    if isinstance(e, ValueError):
+        return jsonify(error=str(e)), 400
+    
+    # Log the full exception for server-side errors
+    logger.error(f"Unhandled exception: {str(e)}")
+    logger.error(traceback.format_exc())
+    
+    # Return a generic error message to the client
+    return jsonify(error="An internal server error occurred"), 500
+
 # Routes
 @app.route('/api/config', methods=['GET'])
 def get_config():
-    """Get API configuration"""
+    """Get API configuration."""
     return jsonify({
         'region': config['region'],
         'bucket': config['bucket'],
@@ -80,7 +99,7 @@ def get_config():
 
 @app.route('/api/status', methods=['GET'])
 def get_status():
-    """Get demo job status"""
+    """Get demo job status."""
     try:
         batch = get_aws_client('batch')
         if not batch:
@@ -141,7 +160,7 @@ def get_status():
 
 @app.route('/api/resources', methods=['GET'])
 def get_resources():
-    """Get resource utilization"""
+    """Get resource utilization."""
     try:
         cloudwatch = get_aws_client('cloudwatch')
         if not cloudwatch:
@@ -190,7 +209,7 @@ def get_resources():
 
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
-    """Get variant statistics"""
+    """Get variant statistics."""
     try:
         s3 = get_aws_client('s3')
         if not s3:
@@ -218,8 +237,9 @@ def get_stats():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/start', methods=['POST'])
+@validate_json(START_DEMO_SCHEMA)
 def start_demo():
-    """Start the demo workflow"""
+    """Start the demo workflow."""
     try:
         # Check if AWS Batch is available
         batch = get_aws_client('batch')
@@ -236,9 +256,20 @@ def start_demo():
         
         # Submit the job
         try:
+            job_name = f"omics-demo-{int(time.time())}"
+            
+            # Validate job name
+            if not job_name or len(job_name) > 128:
+                return jsonify({'error': 'Invalid job name'}), 400
+                
+            # Validate job queue
+            job_queue = f"{config['stack_name']}-queue"
+            if not job_queue:
+                return jsonify({'error': 'Invalid job queue'}), 400
+                
             response = batch.submit_job(
-                jobName=f"omics-demo-{int(time.time())}",
-                jobQueue=f"{config['stack_name']}-queue",
+                jobName=job_name,
+                jobQueue=job_queue,
                 jobDefinition=job_definition_name,
                 containerOverrides={
                     'environment': [
@@ -267,6 +298,16 @@ def start_demo():
     except Exception as e:
         logger.error(f"Error starting demo: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+# Health check endpoint
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for monitoring."""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'version': '1.0.0'
+    })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
