@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright 2025 Scott Friedman, All Rights Reserved.
 # Start the API server for the omics demo dashboard
 
 set -e  # Exit on error

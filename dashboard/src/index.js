@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: Copyright 2025 Scott Friedman, All Rights Reserved.
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';

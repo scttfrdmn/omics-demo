@@ -44,8 +44,13 @@ The demo consists of three main components:
 Set up the environment with:
 
 ```bash
-./setup.sh your-unique-bucket-name your-aws-region
+./setup.sh your-unique-bucket-name your-aws-region [aws-profile]
 ```
+
+Parameters:
+- `your-unique-bucket-name`: The S3 bucket to create for the demo (optional, randomly generated if not provided)
+- `your-aws-region`: AWS region to use for resources (optional, defaults to us-east-1)
+- `aws-profile`: AWS CLI profile to use (optional, defaults to 'default')
 
 This script:
 - Creates a dedicated S3 bucket for the demo
@@ -105,14 +110,17 @@ aws cloudformation create-stack \
   --stack-name omics-demo \
   --template-body file://cloudformation.yaml \
   --capabilities CAPABILITY_IAM \
-  --parameters ParameterKey=DataBucketName,ParameterValue=your-unique-bucket-name
+  --parameters ParameterKey=DataBucketName,ParameterValue=your-unique-bucket-name \
+  --profile your-aws-profile
 ```
 
 Wait for stack creation to complete (10-15 minutes):
 
 ```bash
-aws cloudformation wait stack-create-complete --stack-name omics-demo
+aws cloudformation wait stack-create-complete --stack-name omics-demo --profile your-aws-profile
 ```
+
+Note: Replace `your-aws-profile` with the AWS profile you specified during setup, or omit the `--profile` parameter to use the default profile.
 
 ### 6. Start the Backend API
 
@@ -160,6 +168,28 @@ If you encounter issues during the demo:
 ```bash
 ./reset_demo.sh
 ```
+
+### 11. Using Different AWS Profiles
+
+The demo supports using different AWS profiles for environments where you need to work with multiple AWS accounts:
+
+1. **Setup with a specific profile**:
+   ```bash
+   ./setup.sh my-bucket my-region my-profile
+   ```
+
+2. **All scripts will automatically use the specified profile** from your config.sh file.
+
+3. **For manual AWS CLI commands**, remember to add the `--profile` flag:
+   ```bash
+   aws s3 ls s3://my-bucket --profile my-profile
+   ```
+
+4. **Environment variables**: You can also use the AWS_PROFILE environment variable:
+   ```bash
+   export AWS_PROFILE=my-profile
+   ./start_demo.sh
+   ```
 
 ## Development Guidelines
 
@@ -273,14 +303,16 @@ This demo showcases several AWS cost optimization techniques:
 
 To delete all AWS resources and avoid ongoing charges:
 ```bash
-aws cloudformation delete-stack --stack-name omics-demo
+aws cloudformation delete-stack --stack-name omics-demo --profile your-aws-profile
 ```
 
 Additionally, empty and delete the S3 bucket:
 ```bash
-aws s3 rm s3://your-bucket-name --recursive
-aws s3 rb s3://your-bucket-name
+aws s3 rm s3://your-bucket-name --recursive --profile your-aws-profile
+aws s3 rb s3://your-bucket-name --profile your-aws-profile
 ```
+
+Replace `your-aws-profile` with the AWS profile you specified during setup, or omit the `--profile` parameter to use the default profile.
 
 ## Customization
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env nextflow
 
 /*
+ * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright 2025 Scott Friedman, All Rights Reserved.
  * Nextflow pipeline for the 15-minute Omics Demo
  * This pipeline processes samples from the 1000 Genomes Project
  * and performs variant calling and other analyses

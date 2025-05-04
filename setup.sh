@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright 2025 Scott Friedman, All Rights Reserved.
 # setup.sh - Initial setup for the omics demo
 
 set -e  # Exit on error
@@ -6,6 +8,7 @@ set -e  # Exit on error
 # Process command line arguments
 BUCKET_NAME=${1:-omics-demo-bucket-$(LC_CTYPE=C tr -dc 'a-z0-9' < /dev/urandom | fold -w 10 | head -n 1)}
 REGION=${2:-us-east-1}
+AWS_PROFILE=${3:-default}
 
 # Script constants
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
@@ -29,8 +32,8 @@ check_requirements() {
     fi
     
     # Check AWS CLI configuration
-    if ! aws sts get-caller-identity &>/dev/null; then
-        log "Error: AWS CLI not configured. Please run 'aws configure' first."
+    if ! aws sts get-caller-identity --profile "$AWS_PROFILE" &>/dev/null; then
+        log "Error: AWS CLI not configured correctly for profile '$AWS_PROFILE'. Please run 'aws configure --profile $AWS_PROFILE' first."
         exit 1
     fi
     
@@ -65,22 +68,23 @@ create_s3_bucket() {
     log "Setting up S3 bucket: $BUCKET_NAME"
     
     # Check if bucket exists
-    if aws s3 ls "s3://$BUCKET_NAME" 2>&1 > /dev/null; then
+    if aws s3 ls "s3://$BUCKET_NAME" --profile "$AWS_PROFILE" 2>&1 > /dev/null; then
         log "Bucket already exists: $BUCKET_NAME"
     else
         # Create the bucket
-        log "Creating S3 bucket: $BUCKET_NAME in $REGION"
+        log "Creating S3 bucket: $BUCKET_NAME in $REGION using profile $AWS_PROFILE"
         
         if [[ "$REGION" == "us-east-1" ]]; then
             # Special case for us-east-1 which doesn't use LocationConstraint
-            aws s3api create-bucket --bucket "$BUCKET_NAME" || {
+            aws s3api create-bucket --bucket "$BUCKET_NAME" --profile "$AWS_PROFILE" || {
                 log "Error: Failed to create bucket. Please check AWS permissions or try a different name."
                 exit 1
             }
         else
             # Use LocationConstraint for other regions
             aws s3api create-bucket --bucket "$BUCKET_NAME" \
-                --create-bucket-configuration LocationConstraint="$REGION" || {
+                --create-bucket-configuration LocationConstraint="$REGION" \
+                --profile "$AWS_PROFILE" || {
                 log "Error: Failed to create bucket. Please check AWS permissions or try a different name."
                 exit 1
             }
@@ -89,7 +93,8 @@ create_s3_bucket() {
         # Enable versioning for recovery
         aws s3api put-bucket-versioning \
             --bucket "$BUCKET_NAME" \
-            --versioning-configuration Status=Enabled
+            --versioning-configuration Status=Enabled \
+            --profile "$AWS_PROFILE"
             
         log "Bucket created: $BUCKET_NAME"
         
@@ -111,7 +116,8 @@ create_s3_bucket() {
 EOF
         aws s3api put-bucket-lifecycle-configuration \
             --bucket "$BUCKET_NAME" \
-            --lifecycle-configuration file:///tmp/lifecycle.json || {
+            --lifecycle-configuration file:///tmp/lifecycle.json \
+            --profile "$AWS_PROFILE" || {
             log "Warning: Failed to set lifecycle rules. Old versions won't be automatically cleaned up."
         }
     fi
@@ -129,6 +135,7 @@ create_config_file() {
 # AWS Configuration
 BUCKET_NAME=$BUCKET_NAME
 REGION=$REGION
+AWS_PROFILE=$AWS_PROFILE
 STACK_NAME=omics-demo
 
 # Dashboard Configuration
@@ -160,6 +167,7 @@ log "Omics Demo Initial Setup"
 log "==========================================="
 log "Target bucket: $BUCKET_NAME"
 log "Region: $REGION"
+log "AWS Profile: $AWS_PROFILE"
 log "==========================================="
 
 # Run setup steps

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright 2025 Scott Friedman, All Rights Reserved.
 """
 API server for omics-demo dashboard
 Provides secure access to AWS resources and demo status
@@ -33,6 +35,7 @@ CORS(app)
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config.sh')
 DEFAULT_REGION = 'us-east-1'
 DEFAULT_BUCKET = 'omics-demo-bucket'
+DEFAULT_PROFILE = 'default'
 STACK_NAME = 'omics-demo'
 
 # Parse config.sh to get AWS settings
@@ -41,6 +44,7 @@ def load_config():
     config = {
         'region': DEFAULT_REGION,
         'bucket': DEFAULT_BUCKET,
+        'profile': DEFAULT_PROFILE,
         'stack_name': STACK_NAME
     }
     
@@ -54,6 +58,8 @@ def load_config():
                             config['region'] = value
                         elif key == 'BUCKET_NAME':
                             config['bucket'] = value
+                        elif key == 'AWS_PROFILE':
+                            config['profile'] = value
                         elif key == 'STACK_NAME':
                             config['stack_name'] = value
     except Exception as e:
@@ -67,7 +73,8 @@ config = load_config()
 def get_aws_client(service_name):
     """Create an AWS client for the specified service."""
     try:
-        return boto3.client(service_name, region_name=config['region'])
+        session = boto3.Session(profile_name=config['profile'], region_name=config['region'])
+        return session.client(service_name)
     except Exception as e:
         logger.error(f"Error creating AWS client for {service_name}: {str(e)}")
         return None
@@ -93,6 +100,7 @@ def get_config():
     return jsonify({
         'region': config['region'],
         'bucket': config['bucket'],
+        'profile': config['profile'],
         'stackName': config['stack_name'],
         'simulation': False  # Real mode by default
     })

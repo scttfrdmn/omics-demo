@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright 2025 Scott Friedman, All Rights Reserved.
 # prepare_demo_data.sh
 # Script to prepare the 1000 Genomes Project data for the 15-minute Omics Demo
 

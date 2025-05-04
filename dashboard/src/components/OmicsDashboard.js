@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: Copyright 2025 Scott Friedman, All Rights Reserved.
 import React, { useState, useEffect } from 'react';
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar, 

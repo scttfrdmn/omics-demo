@@ -1,4 +1,6 @@
 """Pytest configuration file for omics-demo tests."""
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright 2025 Scott Friedman, All Rights Reserved.
 
 import os
 import sys
